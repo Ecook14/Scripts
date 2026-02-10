@@ -1,0 +1,14 @@
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# IDE specific files
+.idea/
+.vscode/
+
+# Agent rules
+.agent/
+.agent/rules/
+
+# Binaries (if any compiled here)
+
