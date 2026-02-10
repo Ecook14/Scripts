@@ -32,6 +32,8 @@ func Execute(ctx context.Context) error {
 	return rootCmd.ExecuteContext(ctx)
 }
 
+var jsonOutput bool
+
 func init() {
-	// Global flags (e.g., debug mode) can be defined here
+	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Enable structured JSON output")
 }

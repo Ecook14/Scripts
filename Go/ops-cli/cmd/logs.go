@@ -1,101 +1,88 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
-	"os"
-	"os/exec"
-	"strings"
+	"ops-cli/internal/logs"
 
 	"github.com/spf13/cobra"
 )
 
+var (
+	query    string
+	logLimit int
+)
+
+// logsCmd represents the logs command
 var logsCmd = &cobra.Command{
 	Use:   "logs",
-	Short: "Analyze and tail logs",
-	Long: `Consolidated log viewer for Apache, Exim, MySQL, and System logs.
-Ported from 'adlog.sh' and 'l2.sh'.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		selectedLog := promptUser("Select Log Type: (apache, exim, mysql, system)")
-		ctx := cmd.Context()
+	Short: "Unified log analysis and searching",
+	Long:  `Search across Apache, Exim, MySQL, and System logs using a high-performance interface.`,
+}
 
-		switch selectedLog {
-		case "apache":
-			return analyzeApacheLogs(ctx)
-		case "exim":
-			return analyzeEximLogs(ctx)
-		case "mysql":
-			return analyzeMySQLLogs(ctx)
-		case "system":
-			return analyzeSystemLogs(ctx)
-		default:
-			return fmt.Errorf("invalid log type: %s", selectedLog)
-		}
+var apacheLogCmd = &cobra.Command{
+	Use:   "apache",
+	Short: "Search Apache error logs",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runLogSearch(cmd, logs.TypeApache)
 	},
 }
 
-func promptUser(msg string) string {
-	fmt.Print(msg + " > ")
-	var input string
-	fmt.Scanln(&input)
-	return strings.ToLower(strings.TrimSpace(input))
+var eximLogCmd = &cobra.Command{
+	Use:   "exim",
+	Short: "Search Exim main logs",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runLogSearch(cmd, logs.TypeExim)
+	},
 }
 
-func analyzeApacheLogs(ctx context.Context) error {
-	domain := promptUser("Enter domain name (or leave empty for global):")
-	logFile := "/var/log/apache2/error.log"
+var mysqlLogCmd = &cobra.Command{
+	Use:   "mysql",
+	Short: "Search MySQL error logs",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runLogSearch(cmd, logs.TypeMySQL)
+	},
+}
 
-	if domain != "" {
-		// 6. Defensive Command Execution: Individual args, absolute path
-		return executeCommand(ctx, "/usr/bin/grep", domain, logFile)
+var systemLogCmd = &cobra.Command{
+	Use:   "system",
+	Short: "Search System (syslog/messages) logs",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runLogSearch(cmd, logs.TypeSystem)
+	},
+}
+
+func runLogSearch(cmd *cobra.Command, ltype logs.LogType) error {
+	ctx := cmd.Context()
+	if query == "" {
+		return fmt.Errorf("search query required via --query flag")
 	}
-	return executeTail(ctx, logFile, 50)
-}
 
-func analyzeEximLogs(ctx context.Context) error {
-	logFile := "/var/log/exim_mainlog"
-	slog.Info("Analyzing Exim Logs...")
-	term := promptUser("Search term or leave empty to tail:")
-	if term != "" {
-		return executeCommand(ctx, "/usr/bin/grep", term, logFile)
+	results, err := logs.Search(ctx, ltype, query, logLimit)
+	if err != nil {
+		return fmt.Errorf("search failed: %w", err)
 	}
-	return executeTail(ctx, logFile, 50)
-}
 
-func analyzeMySQLLogs(ctx context.Context) error {
-	logFile := "/var/log/mysqld.log"
-	return executeTail(ctx, logFile, 50)
-}
-
-func analyzeSystemLogs(ctx context.Context) error {
-	logFile := "/var/log/messages"
-	term := promptUser("Search term (e.g. error, fail):")
-	if term != "" {
-		return executeCommand(ctx, "/usr/bin/grep", "-i", term, logFile)
+	if len(results) == 0 {
+		slog.Info("No matches found", "type", ltype, "query", query)
+		return nil
 	}
-	return executeTail(ctx, logFile, 50)
-}
 
-// executeCommand runs a command safely with context cancellation
-func executeCommand(ctx context.Context, name string, args ...string) error {
-	slog.Info("Executing command", "cmd", name, "args", args)
-
-	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		// 2. Never Ignore an error: Wrap and return
-		return fmt.Errorf("command execution failed: %w", err)
+	slog.Info("Search Complete", "matches", len(results))
+	for _, res := range results {
+		fmt.Printf("[%s:%d] %s\n", res.Path, res.Line, res.Content)
 	}
+
 	return nil
-}
-
-func executeTail(ctx context.Context, file string, lines int) error {
-	return executeCommand(ctx, "/usr/bin/tail", "-n", fmt.Sprintf("%d", lines), file)
 }
 
 func init() {
 	rootCmd.AddCommand(logsCmd)
+	logsCmd.AddCommand(apacheLogCmd)
+	logsCmd.AddCommand(eximLogCmd)
+	logsCmd.AddCommand(mysqlLogCmd)
+	logsCmd.AddCommand(systemLogCmd)
+
+	logsCmd.PersistentFlags().StringVarP(&query, "query", "q", "", "Search string")
+	logsCmd.PersistentFlags().IntVarP(&logLimit, "limit", "l", 50, "Limit number of results")
 }
