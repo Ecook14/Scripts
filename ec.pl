@@ -48,8 +48,6 @@ $| = 1; #turn on autoflush of stdout (allows progress code to work correctly)
 
 # begin maincode
 
-print "ecpp_2.pl - Version: $version - Michael Karr\n\n"; 
-
 my $hostname = hostname();
 my $starthours = 48;
 my $endhours = 0;
