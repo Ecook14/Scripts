@@ -1,4 +1,6 @@
-#! /bin/sh
+#!/bin/sh
+# Author: Nihar
+# Description: Apache MaxRequestWorkers optimization tool based on RSS.
 
 # Function to calculate and set Apache MaxRequestWorkers
 set_apache_max_request_workers() {

@@ -1,75 +1,57 @@
-# ops-cli: High-Performance Infrastructure Automation
+# 🛰️ ops-cli: High-Performance Infrastructure Automation
 
-`ops-cli` is a professional-grade, Go-based platform designed to consolidate legacy shell scripts into a unified, high-performance binary. It is engineered for **Senior SREs** with a focus on active defense, self-healing, and observability.
+`ops-cli` is a professional-grade, Go-based platform engineered to replace legacy shell scripts with a unified, high-performance binary. It is designed for **Production Operations** where performance, safety, and reliability are absolute requirements.
 
-## 🏗️ Technical Architecture
+## ⚡ Usage & Verification
+For a complete breakdown of all commands, sub-commands, and flags, refer to the **[ops-cli Operational Manual (Usage.md)](./Usage.md)**.
 
-The codebase is organized into modular packages to ensure separation of concerns and high testability:
+Architecture and performance details are documented below in the **Engineering Discipline** and **Performance at Scale** sections.
 
-### 🎮 CLI Core (`/cmd`)
-Uses **Cobra** for command-line parsing.
-- `root.go`: Global configuration and `--json` support.
-- `response.go`: Entry for the Incident Response engine.
-- `forensics.go`: Security and persistence auditing entry.
-- `monitor.go`: TCP observability and metrics exporter.
-- `network.go`: Firewall management bridge.
-- `logs.go`: Unified log search entry.
+---
 
-### 🧠 Incident Engine (`/internal/incident`)
-Handles system health and automated remediation.
-- **Checks**: Load average, Service ports, Cryptominer processes, Kernel OOM logs.
-- **Remediation**: `ServiceRestart`, `ProcessKill`.
-- **Policy**: Supports dry-run and automated action flows.
+## 🏗️ Engineering Discipline: Modules of Defense
+Architecture isn't just about organization; it's about separation of concerns and resource efficiency. The codebase is structured into a multi-layered defensive stack:
 
-### 🔍 Forensics Suite (`/internal/forensics`)
-Advanced security analysis toolset.
-- **Scanner**: Parallel signature matching + **Shannon Entropy** analysis for polymorphism.
-- **Persistence**: Deep audit of `.bashrc`, `.profile`, and system-wide **Cronjobs**.
-- **Self-Healing**: Automated `chattr -i` unlocking, **Quarantine** isolation, and **Full Restoration** via metadata-backed revert logic.
+### 🎮 The Command Center (`/cmd`)
+Uses the **Cobra** ecosystem for structured, CLI-compliant interactions.
+- `response.go`: Entry point for the Incident Response engine.
+- `forensics.go`: Entry point for deep-system security audits.
+- `monitor.go`: Real-time TCP observability and metrics.
 
-### 🛰️ Monitoring Sidecar (`/internal/monitor`)
-High-availability observability.
-- **TCP Stack**: Zero-dependency parsing of `/proc/net/tcp`.
-- **Anomalies**: Detects **Thundering Herd** spikes and Listen Queue overflows.
-- **Exporter**: Built-in Prometheus-compatible metrics server.
+### 🧠 Incident Response Engine (`/internal/incident`)
+Automated remediation logic that acts on real-time system signals (CPU, Load, Miners, OOM). It moves the "Human-in-the-loop" requirement to a "Review-after-action" workflow.
 
-### 💾 Disk Audit (`/internal/disk`)
-- **Memory Optimized**: Uses a fixed-size **Min-Heap** to track the top K largest files/dirs without loading entire file lists into memory.
-- **Granular Controls**: Supports `--top` (report density) and `--min-size` (noise reduction) filters.
-- **Context Aware**: Respects timeouts and cancellation signals (Ctrl+C).
+### 🔍 Forensics & Malware Integrity (`/internal/forensics`)
+Go beyond simple signature matching. This module uses **Mathematical Forensics** (Shannon Entropy) to detect polymorphic threats and ransomware that bypass traditional scanners.
+- **Persistence Audit**: Scans `.bashrc`, `.profile`, and `cronjobs` for unauthenticated entry points.
+- **Self-Healing**: Automated `chattr -i` mitigation and metadata-backed restoration.
 
-### 🌐 Network & Logs (`/internal/network`, `/internal/logs`)
-Legacy script replacements with native Go speed.
-- **Network**: Delisting from CSF, Firewalld, and Iptables.
-- **Logs**: High-speed, case-insensitive searching across multiple log categories.
+### 🛰️ TCP Observability Sidecar (`/internal/monitor`)
+High-speed parsing of `/proc/net` with zero external dependencies. Designed to detect **Thundering Herd** spikes and listen queue overflows with <1ms overhead.
+
+---
+
+## 🚀 Performance at Scale
+Engineering is about data, not claims. `ops-cli` is built for line-rate efficiency:
+
+- **O(K) Space Complexity**: By utilizing a **Min-Heap** for disk tracking and streaming log buffers, the RAM footprint remains constant regardless of whether you are auditing a 1GB or 100TB filesystem.
+- **Shannon Entropy Analysis**: Mathematical detection of high-entropy (random) signal patterns in binaries, catching stealthy polymorphism and encrypted ransomware payloads.
+- **Context-Aware Execution**: Comprehensive **Context Propagation** ensures that `SIGINT` (Ctrl+C) signals are respected instantly, preventing hung IO or "zombie" processes.
+
+---
 
 ## 🛠️ Build & Deployment
-
-`ops-cli` is designed to be deployed as a single, statically linked binary.
+Statically linked, zero-dependency binaries for portable cross-distro deployment.
 
 ```bash
 # 1. Tidy dependencies
 go mod tidy
 
-# 2. Compile for production (Linux target)
+# 2. Compile for production (Linux/AMD64)
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ops-cli .
 ```
 
-## 💎 Key Professional Features
+## 📜 Final Word
+`ops-cli` reflects a commitment to building infrastructure that is not just functional, but resilient. It handles the heavy lifting of forensics and system audits so that engineers can focus on architecture, not fire-fighting.
 
-- **Observability**: Expose health metrics via `ops-cli monitor serve`.
-- **Interoperability**: Global `--json` flag for integration with standard SIEM/Automation.
-- **Safety**: Robust context-cancellation support for long-running scans or audits.
-- **Minimalism**: Compiled binary has zero external runtime dependencies.
-
-## 🛡️ Security Logic
-The tool executes all system commands (like `csf`, `systemctl`) using absolute paths and strict `exec.CommandContext` wrappers to prevent shell inheritance and injection attacks.
-
-## 🚀 Why this is the "Optimum Approach"
-
-This toolkit utilizes Computer Science fundamentals to ensure production-grade reliability:
-
-- **O(K) Space Complexity (Disk/Logs)**: By using a **Min-Heap** for disk tracking and streaming log buffers, the RAM usage remains constant regardless of whether you scan a 1GB or 100TB filesystem.
-- **Mathematical Forensics**: Implements **Shannon Entropy** to detect polymorphic malware and ransomware. This mathematical approach identifies "randomness" signals that standard signature-based scanners miss.
-- **Signal-Aware Execution**: Comprehensive **Context Propagation** ensures that `SIGINT` (Ctrl+C) signals are respected instantly across all goroutines, preventing hung IO or "zombie" processes.
-- **Zero-Dependency Core**: built entirely on the Go Standard Library to eliminate supply-chain risks, minimize binary size, and guarantee binary portability across any Linux distro.
+**Built for Resilience. Optimized for the Edge.** 🛡️✨

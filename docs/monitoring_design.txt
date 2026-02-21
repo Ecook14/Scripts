@@ -1,0 +1,16 @@
+1. Script Initialization Phase
+1.1 Start Script
+
+Clear the terminal
+
+Display the script banner
+
+Log the start timestamp into:
+/var/log/monitoratop.log
+
+Read manual inputs from user:
+Snap interval
+Frame count
+CPU threshold
+
+... (refer to original notes for full details)

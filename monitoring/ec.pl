@@ -1,4 +1,6 @@
 #!/usr/bin/perl -w
+# Author: Nihar
+# Description: Comprehensive Exim stats and mail log analyzer.
 
 my $version = "20150612";
 

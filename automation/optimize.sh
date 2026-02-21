@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Nihar
+# Description: System performance optimizer for Apache and MySQL.
 
 # Function to calculate and set Apache MaxRequestWorkers
 set_apache_max_request_workers() {

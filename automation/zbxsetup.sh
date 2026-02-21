@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Nihar
+# Description: Automated Zabbix Agent2 installation and configuration.
 
 set -e
 

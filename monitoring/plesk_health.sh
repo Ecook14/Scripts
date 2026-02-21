@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# plesk_health_v7.5.sh
-# Full Plesk + server + website + DB + disk + service + network + Apache diagnostics
-# Comprehensive report with recommendations (no stored DB credentials)
+# Author: Nihar
+# Description: Full-spectrum Plesk and server health diagnostics.
 
 set -u
 IFS=$'\n\t'

@@ -1,4 +1,6 @@
-#! /bin/sh
+#!/bin/sh
+# Author: Nihar
+# Description: Real-time Apache access and error log tailer.
 
 echo Domain?
 read domain

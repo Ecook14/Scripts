@@ -1,9 +1,6 @@
 #!/bin/bash
-#
-# Mail Spam Investigation Script for cPanel/WHM servers
-# Optimized Version (Local Only) with Time Tracking
 # Author: Nihar
-#
+# Description: Mail spam investigation and activity reporting.
 
 SERVER=$(hostname -i)
 REPORT_DIR="/usr/local/apache/htdocs"

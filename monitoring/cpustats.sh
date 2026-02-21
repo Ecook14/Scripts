@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Nihar
+# Description: Real-time CPU performance and I/O wait monitor.
 
 # Default thresholds
 IO_WAIT_THRESHOLD=10

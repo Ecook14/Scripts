@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Nihar
+# Description: Automated malware detection and reporting (LMD).
 
 function run_maldet_scan() {
     echo "Please enter the email address to send the report to:"

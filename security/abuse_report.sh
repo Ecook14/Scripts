@@ -1,15 +1,6 @@
 #!/bin/bash
 # Author: Nihar
-# ============================================================
-# Secure Server Log & Data Collection + Remote Sync Script
-# ============================================================
-# Collects logs, cPanel data (if available), or both.
-# Transfers securely to remote server using password-based rsync.
-# Stores results in /usr/local/apache/htdocs/<domain> on remote.
-# Automatically applies .htpasswd protection and provides access URL.
-# Improvised (Thoda thoda kurachu kurachu) 
-# Cpanel pkgacct identification and execution. 
-# ============================================================
+# Description: Secure log collection and remote data synchronization.
 
 green=$(tput setaf 2)
 red=$(tput setaf 1)
@@ -157,5 +148,3 @@ echo ""
 echo "ZIP Password: ${yellow}${zip_pass}${reset}"
 echo ""
 echo "${green}All done! Data is securely stored and protected remotely.${reset}"
-
-rm -rf abuse.sh

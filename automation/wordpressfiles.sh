@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Nihar
+# Description: WordPress database management and configuration tool.
 
 # Define authentication credentials
 valid_password="1"

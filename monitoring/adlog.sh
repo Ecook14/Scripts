@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Nihar
+# Description: Advanced log viewer for system, web, and mail logs.
 
 function view_logs() {
   echo "Select which log to view:"

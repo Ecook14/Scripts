@@ -1,11 +1,6 @@
 #!/bin/bash
-RED='\033[01;31m'
-GREEN='\033[01;32m'
-RESET='\033[0m'
-clear
-echo -e "$GREEN*************************************************************$RESET"
-echo -e " Cpanel Hardening Script "
-echo -e "$GREEN*************************************************************$RESET"
+# Author: Nihar
+# Description: Comprehensive cPanel/WHM server security hardening.
 wget http://162.241.117.143/monthly_check/mon.sh
 #Installing chkrootkit
 sleep 2;
@@ -413,7 +408,7 @@ echo "##########################################################################
 #Enable SSH Alerts in .bashrc
 cp /root/.bashrc /root/bashrc_backup
 cat >> /root/.bashrc << EOF
-echo 'ALERT - Root Shell Access ($HOSTNAME) on:' QQQdateQQQ QQQwhoQQQ | mail -s "Alert: Root Access from QQQwho | cut -d'(' -f2 | cut -d')' -f1QQQ" $EMAIL
+echo 'ALERT - Root Shell Access ($HOSTNAME) on:' QQQdateQQQ QQQwhoQQQ | mail -s "Alert: Root Access from QQQwho | cut -d'(' -f2 | cut -d')' -f1QQQ" \$EMAIL
 EOF
 sed -i 's/QQQ/`/g' /root/.bashrc
 
@@ -535,7 +530,7 @@ We've whitelisted the below given Support IP addresses. Please don't remove them
 Please let us know if you have any questions. 
 
 
-Have a nice day.  $RESET"
+Have a nice day.  $RESET"
 
 #removing files in /usr/local/src/
 rm -rf /usr/local/src/*

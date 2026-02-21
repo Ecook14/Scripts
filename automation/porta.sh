@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Nihar
+# Description: Network port auditor and configuration utility.
 
 # Function to check if a port is closed and open it if necessary
 check_and_open_port() {
@@ -70,16 +72,16 @@ else
   exit 1
 fi
 
-echo "Enter the port number to check:"
-read port
+    echo "Enter the port number to check:"
+    read port
 
-check_and_open_port "$port"
+    check_and_open_port "$port"
 
-display_processes_listening_on_port "$port"
+    display_processes_listening_on_port "$port"
 
-display_all_listening_ports
+    display_all_listening_ports
 
-echo "Enter the IP address to check and delist if blocked:"
-read ip
+    echo "Enter the IP address to check and delist if blocked:"
+    read ip
 
-check_and_delist_ip "$ip"
+    check_and_delist_ip "$ip"
