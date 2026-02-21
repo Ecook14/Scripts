@@ -56,6 +56,11 @@ Example:
 			return nil
 		}
 
+		if jsonOutput {
+			render(incidents, "")
+			return nil
+		}
+
 		for _, inc := range incidents {
 			slog.Warn("Incident Detected", "check", inc.CheckName, "error", inc.Description)
 

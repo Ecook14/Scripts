@@ -1,0 +1,9 @@
+[
+  {
+    "CheckName": "Service: mysql",
+    "Description": "service mysql (port 3306) unreachable: dial tcp 127.0.0.1:3306: connect: connection refused",
+    "Remediation": {
+      "ServiceName": "mysql"
+    }
+  }
+]

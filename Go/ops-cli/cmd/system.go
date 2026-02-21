@@ -18,6 +18,24 @@ var systemCmd = &cobra.Command{
 	Short: "Diagnostics for system health",
 	Long:  `Provides real-time information about CPU, memory, and load averages`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		memTotal, memFree, err := getSystemMemory()
+
+		if jsonOutput {
+			report := map[string]interface{}{
+				"os":        runtime.GOOS,
+				"arch":      runtime.GOARCH,
+				"cpus":      runtime.NumCPU(),
+				"mem_total": memTotal,
+				"mem_free":  memFree,
+			}
+			if runtime.GOOS == "linux" {
+				load, _ := os.ReadFile("/proc/loadavg")
+				report["load"] = strings.TrimSpace(string(load))
+			}
+			render(report, "")
+			return nil
+		}
+
 		fmt.Printf("System Health Report at %s\n", time.Now().Format(time.RFC1123))
 		fmt.Println("----------------------------------------")
 		
@@ -36,7 +54,6 @@ var systemCmd = &cobra.Command{
 			fmt.Println("Load Average: N/A (Windows/Mac requires syscalls or deps)")
 		}
 
-		memTotal, memFree, err := getSystemMemory()
 		if err != nil {
 			slog.Warn("Could not read memory info", "error", err)
 		} else {

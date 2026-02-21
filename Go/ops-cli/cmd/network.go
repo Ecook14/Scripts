@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"ops-cli/internal/network"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -31,6 +32,11 @@ var ipCheckCmd = &cobra.Command{
 		fw, err := network.CheckIP(ctx, targetIP)
 		if err != nil {
 			return fmt.Errorf("check failed: %w", err)
+		}
+
+		if jsonOutput {
+			render(map[string]string{"ip": targetIP, "firewall": fw, "blocked": strconv.FormatBool(fw != "")}, "")
+			return nil
 		}
 
 		if fw != "" {

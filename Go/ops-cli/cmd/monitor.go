@@ -31,6 +31,11 @@ var connCmd = &cobra.Command{
 		}
 
 		report := monitor.AnalyzeConnections(sockets)
+		if jsonOutput {
+			render(report, "")
+			return nil
+		}
+
 		fmt.Printf("TCP Statistics:\n")
 		fmt.Printf("Total Connections: %d\n", report.TotalConnections)
 		fmt.Printf("By State:\n")
@@ -51,6 +56,11 @@ var backlogCmd = &cobra.Command{
 		}
 
 		report := monitor.AnalyzeConnections(sockets)
+		if jsonOutput {
+			render(report.HighBacklogPorts, "")
+			return nil
+		}
+
 		if len(report.HighBacklogPorts) == 0 {
 			slog.Info("All listen queues are healthy.")
 			return nil
@@ -71,6 +81,11 @@ var thunderingCmd = &cobra.Command{
 		}
 
 		detected, msg := monitor.DetectThunderingHerd(sockets, herdThreshold)
+		if jsonOutput {
+			render(map[string]interface{}{"detected": detected, "message": msg}, "")
+			return nil
+		}
+
 		if detected {
 			slog.Warn(msg)
 		} else {

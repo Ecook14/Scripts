@@ -68,6 +68,11 @@ func runLogSearch(cmd *cobra.Command, ltype logs.LogType) error {
 		return nil
 	}
 
+	if jsonOutput {
+		render(results, "")
+		return nil
+	}
+
 	slog.Info("Search Complete", "matches", len(results))
 	for _, res := range results {
 		fmt.Printf("[%s:%d] %s\n", res.Path, res.Line, res.Content)

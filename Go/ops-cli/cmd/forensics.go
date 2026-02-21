@@ -53,6 +53,11 @@ var scanCmd = &cobra.Command{
 			return fmt.Errorf("scan failed: %w", err)
 		}
 
+		if jsonOutput {
+			render(results, "")
+			return nil
+		}
+
 		if len(results) == 0 {
 			slog.Info("Clean! No malware signatures found.")
 			return nil
@@ -121,6 +126,11 @@ var timelineCmd = &cobra.Command{
 			return fmt.Errorf("timeline analysis failed: %w", err)
 		}
 
+		if jsonOutput {
+			render(events, "")
+			return nil
+		}
+
 		if len(events) == 0 {
 			slog.Info("No file modifications found in the specified window.")
 			return nil
@@ -145,6 +155,11 @@ var persistenceCmd = &cobra.Command{
 		incidents, err := forensics.AuditShellInitFiles(ctx, home)
 		if err != nil {
 			return fmt.Errorf("audit failed: %w", err)
+		}
+
+		if jsonOutput {
+			render(incidents, "")
+			return nil
 		}
 
 		if len(incidents) == 0 {
