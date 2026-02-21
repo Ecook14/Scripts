@@ -1,57 +1,53 @@
-# 🛰️ ops-cli: High-Performance Infrastructure Automation
+# 🛰️ ops-cli: High-Performance Infrastructure Engineering
 
-`ops-cli` is a professional-grade, Go-based platform engineered to replace legacy shell scripts with a unified, high-performance binary. It is designed for **Production Operations** where performance, safety, and reliability are absolute requirements.
-
-## ⚡ Usage & Verification
-For a complete breakdown of all commands, sub-commands, and flags, refer to the **[ops-cli Operational Manual (Usage.md)](./Usage.md)**.
-
-Architecture and performance details are documented below in the **Engineering Discipline** and **Performance at Scale** sections.
+`ops-cli` is a professional-grade Go platform engineered to provide line-rate observability and assisted remediation for distributed systems. It replaces legacy dependencies with a unified, statically-linked binary designed for extreme resource efficiency.
 
 ---
 
-## 🏗️ Engineering Discipline: Modules of Defense
-Architecture isn't just about organization; it's about separation of concerns and resource efficiency. The codebase is structured into a multi-layered defensive stack:
+## 🏗️ Technical Architecture: The 6 Engines
 
-### 🎮 The Command Center (`/cmd`)
-Uses the **Cobra** ecosystem for structured, CLI-compliant interactions.
-- `response.go`: Entry point for the Incident Response engine.
-- `forensics.go`: Entry point for deep-system security audits.
-- `monitor.go`: Real-time TCP observability and metrics.
+I built `ops-cli` around six decoupled engines, each optimized for specific infrastructure reality.
 
-### 🧠 Incident Response Engine (`/internal/incident`)
-Automated remediation logic that acts on real-time system signals (CPU, Load, Miners, OOM). It moves the "Human-in-the-loop" requirement to a "Review-after-action" workflow.
+### 🛡️ [1] Forensics Engine (`/internal/forensics`)
+Go beyond simple string matching. This module implements **Mathematical Auditing**:
+- **Shannon Entropy Analysis**: Detects high-entropy signals (Threshold: >5.5) in file headers to identify encrypted ransomware or obfuscated malware (e.g., Rondo polymorphism).
+- **Persistence Audit**: Scans system and user-level initialization files (`.bashrc`, `.profile`) and `cronjobs` for command hijacking (aliases), hidden execution paths, and unauthenticated remote script invocations (`curl | bash`).
+- **Quarantine Logic**: Automated file isolation with **Attribute Unlocking** (`chattr -i`) for persistent threats that attempt to lock their own presence.
 
-### 🔍 Forensics & Malware Integrity (`/internal/forensics`)
-Go beyond simple signature matching. This module uses **Mathematical Forensics** (Shannon Entropy) to detect polymorphic threats and ransomware that bypass traditional scanners.
-- **Persistence Audit**: Scans `.bashrc`, `.profile`, and `cronjobs` for unauthenticated entry points.
-- **Self-Healing**: Automated `chattr -i` mitigation and metadata-backed restoration.
+### 🧠 Incident Remediation Engine (`/internal/incident`)
+A library of remediation utilities that act on real-time system signals:
+- **Modular Checks**: Dedicated logic for `LoadCheck`, `ServiceCheck` (TCP availability), `MinerCheck` (CPU architecture signatures), and `OOMCheck` (Kernel log parsing).
+- **Remediation Commands**: Statically defined executions for `ServiceRestart` (via `systemctl`) and `ProcessKill` (via `SIGKILL`).
+- **Assisted Workflow**: Moves analysis heavy-lifting to the engine while keeping the expert operator in control via `--dry-run` logic.
 
-### 🛰️ TCP Observability Sidecar (`/internal/monitor`)
-High-speed parsing of `/proc/net` with zero external dependencies. Designed to detect **Thundering Herd** spikes and listen queue overflows with <1ms overhead.
+### 🛰️ Monitoring Engine (`/internal/monitor`)
+Zero-dependency observability sidecar for the TCP stack:
+- **ProcNet Parser**: High-speed parsing of `/proc/net/tcp` with little-endian hex decoding.
+- **Herd Detection**: Heuristic analysis for **Thundering Herd** patterns by monitoring `SYN_RECV` states against operator-defined thresholds.
+- **Metric Export**: Built-in Prometheus-compatible sidecar exposing granular socket states and backlog counters.
+
+### 🗄️ Disk Engine (`/internal/disk`)
+Memory-optimized filesystem analysis:
+- **O(K) Space Complexity**: Implements a **Min-Heap** data structure to ensure a constant RAM footprint whether auditing a 1GB or 100TB partition.
+
+### 📡 Log Engine (`/internal/logs`)
+The high-speed streaming search engine:
+- **Line-Rate Streaming**: Uses `bufio.Scanner` to search multi-gigabyte logs without memory pressure.
+- **Unified Mapping**: Pre-integrated with standard log paths for Apache, Exim, MySQL, and System logs across Linux distributions.
+
+### 🧱 Network Engine (`/internal/network`)
+The cross-firewall bridge:
+- **Unified Abstraction**: Single interface for interacting with `CSF`, `Firewalld`, and `IPTables`.
+- **IP Mitigation**: Standardized `CheckIP` and `UnblockIP` logic for rapid incident mitigation.
 
 ---
 
 ## 🚀 Performance at Scale
-Engineering is about data, not claims. `ops-cli` is built for line-rate efficiency:
+- **Static Linkage**: Zero-dependency binary (`CGO_ENABLED=0`) for portable, immediate deployment.
+- **Context-Aware**: Full `context.Context` propagation ensures that I/O operations and scans respect timeouts and `SIGINT` (Ctrl+C) instantly.
+- **Zero-B.S. Model**: Stripped of interactive friction, designed for direct execution via automation handlers.
 
-- **O(K) Space Complexity**: By utilizing a **Min-Heap** for disk tracking and streaming log buffers, the RAM footprint remains constant regardless of whether you are auditing a 1GB or 100TB filesystem.
-- **Shannon Entropy Analysis**: Mathematical detection of high-entropy (random) signal patterns in binaries, catching stealthy polymorphism and encrypted ransomware payloads.
-- **Context-Aware Execution**: Comprehensive **Context Propagation** ensures that `SIGINT` (Ctrl+C) signals are respected instantly, preventing hung IO or "zombie" processes.
+[View the Exhaustive Operational Manual (Usage.md)](./Usage.md)
 
 ---
-
-## 🛠️ Build & Deployment
-Statically linked, zero-dependency binaries for portable cross-distro deployment.
-
-```bash
-# 1. Tidy dependencies
-go mod tidy
-
-# 2. Compile for production (Linux/AMD64)
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ops-cli .
-```
-
-## 📜 Final Word
-`ops-cli` reflects a commitment to building infrastructure that is not just functional, but resilient. It handles the heavy lifting of forensics and system audits so that engineers can focus on architecture, not fire-fighting.
-
-**Built for Resilience. Optimized for the Edge.** 🛡️✨
+**Standardized for Resilience.** Built by Nihar. 🛡️✨
