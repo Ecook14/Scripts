@@ -3,18 +3,6 @@ echo "===== SECURITY SCAN START ====="
 date
 echo
 
-#########################################
-# FAST NUCLEAR.X86 SCAN (PRIORITY)
-#########################################
-echo "[0] QUICK SCAN: nuclear.x86"
-echo "→ Searching common malware locations..."
-find /tmp /var/tmp /dev/shm /usr/local/bin /usr/bin /root -type f -name "nuclear.x86" 2>/dev/null
-
-echo
-echo "→ Fast grep for nuclear.x86 references..."
-grep -R "nuclear.x86" /var /usr/local/cpanel /root 2>/dev/null | head -n 40
-echo
-
 
 #########################################
 # LOGIN INVESTIGATION
@@ -81,6 +69,17 @@ echo "[8] Suspicious network connections"
 ss -tulpn | egrep "87.121|45.148|3333|5555|7777" --color
 echo
 
+#########################################
+# FAST NUCLEAR.X86 SCAN (PRIORITY)
+#########################################
+echo "[0] QUICK SCAN: nuclear.x86"
+echo "→ Searching common malware locations..."
+find /tmp /var/tmp /dev/shm /usr/local/bin /usr/bin /root -type f -name "nuclear.x86" 2>/dev/null
+
+echo
+echo "→ Fast grep for nuclear.x86 references..."
+grep -R "nuclear.x86" /var /usr/local/cpanel /root 2>/dev/null | head -n 40
+echo
 
 #########################################
 # FINAL
