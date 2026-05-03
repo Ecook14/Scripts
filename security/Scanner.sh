@@ -55,10 +55,6 @@ echo
 ##############################
 # MALWARE INDICATORS
 ##############################
-echo "[10] Searching for nuclear.x86"
-find / -type f -name "nuclear.x86" 2>/dev/null
-grep -r "nuclear.x86" / 2>/dev/null | head -n 50
-echo
 
 echo "[11] Suspicious processes"
 ps aux | egrep "nuclear|xmrig|kdevtmpfs|kinsing|udevd|systemd-network" --color
@@ -74,5 +70,13 @@ echo
 echo "[13] Searching for bitcoin-miner injections"
 grep -R "bitcoin\|btc\|miner\|nuclear" /home/*/public_html 2>/dev/null | head -n 40
 echo
+
+
+echo "[10] Searching for nuclear.x86"
+find / -type f -name "nuclear.x86" 2>/dev/null
+grep -r "nuclear.x86" / 2>/dev/null | head -n 50
+echo
+
+
 
 echo "===== SECURITY SCAN COMPLETE ====="
