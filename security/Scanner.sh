@@ -3,80 +3,86 @@ echo "===== SECURITY SCAN START ====="
 date
 echo
 
-##############################
+#########################################
+# FAST NUCLEAR.X86 SCAN (PRIORITY)
+#########################################
+echo "[0] QUICK SCAN: nuclear.x86"
+echo "→ Searching common malware locations..."
+find /tmp /var/tmp /dev/shm /usr/local/bin /usr/bin /root -type f -name "nuclear.x86" 2>/dev/null
+
+echo
+echo "→ Fast grep for nuclear.x86 references..."
+grep -R "nuclear.x86" /var /usr/local/cpanel /root 2>/dev/null | head -n 40
+echo
+
+
+#########################################
 # LOGIN INVESTIGATION
-##############################
-echo "[1] Last logins"
-last -a | head -n 50
+#########################################
+echo "[1] Suspicious SSH logins"
+grep -iE "Failed|Accepted" /var/log/secure | tail -n 40
 echo
 
-echo "[2] SSH brute-force / anomalies"
-grep -i "Failed" /var/log/secure | tail -n 50
-grep -i "Accepted" /var/log/secure | tail -n 50
+echo "[2] cPanel/WHM login log anomalies"
+grep -iE "FAILED|error|root" /usr/local/cpanel/logs/login_log | tail -n 40
 echo
 
-echo "[3] cPanel/WHM login log"
-cat /usr/local/cpanel/logs/login_log | tail -n 50
-echo
 
-##############################
+#########################################
 # CRON PERSISTENCE
-##############################
-echo "[4] User crontab"
-crontab -l 2>/dev/null
+#########################################
+echo "[3] Suspicious cron entries"
+grep -R "wget\|curl\|bash -i\|sh -i\|nuclear\|miner\|xmrig" /etc/cron* /var/spool/cron 2>/dev/null
 echo
 
-echo "[5] System cron directories"
-ls -la /etc/cron.*
-echo
 
-##############################
+#########################################
 # SSH PERSISTENCE
-##############################
-echo "[6] Root authorized_keys"
-cat /root/.ssh/authorized_keys 2>/dev/null
-echo
-
-echo "[7] All user authorized_keys"
-find /home /root -maxdepth 3 -name "authorized_keys" -exec echo "FILE {}" \; -exec cat {} \;
-echo
-
-##############################
-# NEW USERS
-##############################
-echo "[8] Suspicious system accounts"
-awk -F: '($3 == 0) {print "[!] Extra ROOT account →", $1}' /etc/passwd
-echo
-
-echo "[9] Full passwd listing"
-cat /etc/passwd
-echo
-
-##############################
-# MALWARE INDICATORS
-##############################
-
-echo "[11] Suspicious processes"
-ps aux | egrep "nuclear|xmrig|kdevtmpfs|kinsing|udevd|systemd-network" --color
-echo
-
-echo "[12] Suspicious network connections"
-ss -tulpn | egrep "87.121.84.78|45.148.120.23|3333|5555|7777" --color
-echo
-
-##############################
-# WEBSITE / DOMAIN CHECK
-##############################
-echo "[13] Searching for bitcoin-miner injections"
-grep -R "bitcoin\|btc\|miner\|nuclear" /home/*/public_html 2>/dev/null | head -n 40
+#########################################
+echo "[4] Unauthorized keys"
+grep -R "ssh-rsa\|ssh-ed25519" /root/.ssh /home/*/.ssh 2>/dev/null | \
+grep -v "your-known-good-key" 
 echo
 
 
-echo "[10] Searching for nuclear.x86"
-find / -type f -name "nuclear.x86" 2>/dev/null
-grep -r "nuclear.x86" / 2>/dev/null | head -n 50
+#########################################
+# SUSPICIOUS USERS
+#########################################
+echo "[5] Extra ROOT accounts"
+awk -F: '($3==0){print "[!] ROOT ACCOUNT →", $1}' /etc/passwd
 echo
 
 
+#########################################
+# WEBSITE INJECTION SCAN
+#########################################
+echo "[6] Infected website files (show ONLY infected files)"
+grep -RIl \
+    -e "base64_decode" \
+    -e "eval(" \
+    -e "gzinflate" \
+    -e "shell_exec" \
+    -e "bitcoin" \
+    -e "btc" \
+    -e "miner" \
+    -e "nuclear" \
+    /home/*/public_html 2>/dev/null | head -n 50
+echo
 
+
+#########################################
+# MALWARE PROCESSES & NETWORK
+#########################################
+echo "[7] Malware-like processes"
+ps aux | egrep "nuclear|xmrig|kinsing|kdevtmpfs|udevd|watchdog" --color
+echo
+
+echo "[8] Suspicious network connections"
+ss -tulpn | egrep "87.121|45.148|3333|5555|7777" --color
+echo
+
+
+#########################################
+# FINAL
+#########################################
 echo "===== SECURITY SCAN COMPLETE ====="
