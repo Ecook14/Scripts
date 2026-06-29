@@ -20,12 +20,12 @@ echo "--- Server Forwarding Report ---"
 
 for USER in $USERS; do
     if [ -f "/var/cpanel/users/$USER" ]; then
-        # Parse the output to show only the mapping: Source -> Destination
+        # Parse: dest (Source) -> forward (Destination)
         uapi --user=${USER} Email list_forwarders 2>/dev/null | awk '
             /dest:/    { dest=$2 }
             /forward:/ { 
                 fwd=$2; 
-                print fwd " -> " dest 
+                print dest " -> " fwd 
             }
         '
     fi
