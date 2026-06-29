@@ -16,7 +16,7 @@ else
     USERS=$(/bin/ls -1 /var/cpanel/users)
 fi
 
-echo "--- Server Forwarding Report (Cleaned) ---"
+echo "--- Server Forwarding Report ---"
 
 for USER in $USERS; do
     if [ -f "/var/cpanel/users/$USER" ]; then
