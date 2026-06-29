@@ -1,14 +1,12 @@
 #!/bin/bash
 
-# Usage: ./findfwd.sh [-u username] [-d domain]
+# Usage: ./findfwd.sh [-u username]
 TARGET_USER=""
-TARGET_DOMAIN=""
 
-while getopts "u:d:" opt; do
+while getopts "u:" opt; do
   case $opt in
     u) TARGET_USER="$OPTARG" ;;
-    d) TARGET_DOMAIN="$OPTARG" ;;
-    *) echo "Usage: $0 [-u username] [-d domain]"; exit 1 ;;
+    *) echo "Usage: $0 [-u username]"; exit 1 ;;
   esac
 done
 
@@ -23,16 +21,12 @@ echo "--- Server Forwarding Report ---"
 
 for USER in $USERS; do
     if [ -f "/var/cpanel/users/$USER" ]; then
-        # Use --output=json for reliable parsing if available, 
-        # but sticking to standard UAPI output, we adjust the awk filter:
-        uapi --user=${USER} Email list_forwarders 2>/dev/null | awk -v target_d="$TARGET_DOMAIN" '
-            /domain:/ { domain=$2 }
-            /dest:/   { dest=$2 }
+        # Fetch and parse forwarders for the user
+        uapi --user=${USER} Email list_forwarders 2>/dev/null | awk -v username="$USER" '
+            /domain:/  { domain=$2 }
+            /dest:/    { dest=$2 }
             /forward:/ { 
-                fwd=$2; 
-                if (target_d == "" || domain == target_d) {
-                    print "User: " ENVIRON["USER"] " | Domain: " domain " | " fwd " -> " dest
-                }
+                print "User: " username " | Domain: " domain " | Forwarder: " $2 " -> Destination: " dest
             }
         '
     fi
