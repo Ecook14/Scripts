@@ -16,17 +16,17 @@ else
     USERS=$(/bin/ls -1 /var/cpanel/users)
 fi
 
-echo "--- Server Forwarding Report ---"
+echo "--- Server Forwarding Report (Cleaned) ---"
 
 for USER in $USERS; do
     if [ -f "/var/cpanel/users/$USER" ]; then
-        # Parse: dest (Source) -> forward (Destination)
+        # Use awk to clean %40, map dest->forward, and pipe through 'sort -u' for unique results
         uapi --user=${USER} Email list_forwarders 2>/dev/null | awk '
-            /dest:/    { dest=$2 }
+            /dest:/    { gsub(/%40/, "@", $2); dest=$2 }
             /forward:/ { 
-                fwd=$2; 
-                print dest " -> " fwd 
+                gsub(/%40/, "@", $2); 
+                print dest " -> " $2 
             }
-        '
+        ' | sort -u
     fi
 done
