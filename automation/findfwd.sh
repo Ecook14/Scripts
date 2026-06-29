@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# Usage: ./findfwd.sh [-u username]
+# Usage: ./script.sh [-u username]
+
 TARGET_USER=""
 
-while getopts "u:" opt; do
+while getopts "u:d:" opt; do
   case $opt in
     u) TARGET_USER="$OPTARG" ;;
-    *) echo "Usage: $0 [-u username]"; exit 1 ;;
+    *) echo "Usage: $0 [-u username] [-d domain]"; exit 1 ;;
   esac
 done
 
-# Define the user list
+# Define the user list to iterate over
 if [ -n "$TARGET_USER" ]; then
     USERS="$TARGET_USER"
 else
@@ -20,13 +21,17 @@ fi
 echo "--- Server Forwarding Report ---"
 
 for USER in $USERS; do
+    # Verify the user file exists to prevent errors
     if [ -f "/var/cpanel/users/$USER" ]; then
-        # Fetch and parse forwarders for the user
-        uapi --user=${USER} Email list_forwarders 2>/dev/null | awk -v username="$USER" '
-            /domain:/  { domain=$2 }
-            /dest:/    { dest=$2 }
-            /forward:/ { 
-                print "User: " username " | Domain: " domain " | Forwarder: " $2 " -> Destination: " dest
+        # Fetch forwarders
+        # We output in format: User: Domain -> Destination
+        uapi --user=${USER} Email list_forwarders 2>/dev/null | awk -v user="$USER"  '
+            $1 == "domain:" {domain=$2}
+            $1 == "dest:" {dest=$2}
+            $1 == "forward:" {
+                if (target_d == "" || domain == target_d) {
+                    print user " [" domain "]: " $2 " -> " dest
+                }
             }
         '
     fi
