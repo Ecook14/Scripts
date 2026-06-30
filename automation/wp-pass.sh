@@ -25,7 +25,7 @@ NEW_PASS=$(openssl rand -base64 12)
 
 # 4. Update the WordPress user
 # --skip-plugins and --skip-themes prevent errors if a broken plugin interferes with WP-CLI
-wp user update "$WP_USER" --user_pass="$NEW_PASS" --path="$DOCROOT" --skip-plugins --skip-themes
+wp user update "$WP_USER" --user_pass="$NEW_PASS" --path="$DOCROOT" --skip-plugins --skip-themes --allow-root
 
 if [ $? -eq 0 ]; then
     echo "----------------------------------------------------"
