@@ -22,7 +22,7 @@ echo "Found document root: $DOCROOT"
 
 # 3. List available users for verification
 echo "--- Fetching user list for $TARGET_DOMAIN ---"
-wp user list --path="$DOCROOT" --allow-root --format=table --fields=user_login,display_name,user_email
+wp user list --path="$DOCROOT" --allow-root --skip-plugins --format=table --fields=user_login,display_name,user_email
 echo "---------------------------------------------"
 
 # 4. Acquire WordPress Username
