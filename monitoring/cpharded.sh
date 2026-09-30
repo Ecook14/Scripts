@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Script Name : cpanel_zabbix_master_setup.sh   (v2.2.2)
+# Script Name : cpanel_zabbix_master_setup.sh   (v2.2.3)
 # Description : cPanel provisioning, nameservers, CSF firewall, SSH/PHP/MySQL
 #               hardening, EasyApache 4 (event MPM + mod_lsapi + mod_remoteip),
 #               ImunifyAV and Zabbix Agent 2 setup, with an automatic
@@ -15,13 +15,6 @@
 #       --verify         Only run the verification checks + write the handover report
 #       --finalize-ssh   After verifying new SSH port: closes port 22 & disables root SSH
 #   -h, --help           Show this help
-#
-# Env overrides: NS1, NS2 (+ optional NS3, NS4), CONTACT_EMAIL, SSH_PORT, ZBX_SERVER_IP,
-#   ZABBIX_VERSION, PRIMARY_DOMAIN, SERVER_IP, HOST_METADATA, ADMIN_USER, ADMIN_PUBKEY,
-#   ROOT_PUBKEY, NEW_HOSTNAME, PHP_DISABLE_FUNCTIONS, FTP_PASV_RANGE,
-#   ADMIN_IPS (comma list for CSF allow), CSF_TARBALL_URL,
-#   FORCE_MYSQL_TUNING=1, INSTALL_FCGID=0|1, LSAPI_FALLBACK_HANDLER,
-#   ENABLE_CF_REMOTEIP=0|1, INCLUDE_PW_IN_REPORT=1
 # ==============================================================================
 
 set -Eeuo pipefail
@@ -95,7 +88,9 @@ v_section() { v_close; printf '\n--- %s ---\n' "$1"; CUR_KEY="${2:-}"; CUR_F0=$F
 ask_yes_no() {
     local prompt="$1" def="${2:-n}" choice hint="[y/N]"
     [[ $def == y ]] && hint="[Y/n]"
-    if (( ASSUME_YES )); then [[ $def == y ]]; return; fi
+    if (( ASSUME_YES )); then
+        if [[ $def == y ]]; then return 0; else return 1; fi
+    fi
     while true; do
         read -r -p "$prompt $hint: " choice || choice=""
         choice="${choice,,}"
@@ -298,7 +293,7 @@ SERVER_IP="${SERVER_IP:-$(detect_public_ip)}"
 
 clear || true
 echo "=============================================================================="
-echo "  cPANEL/WHM PROVISIONING, EA4 (LSAPI), CSF, HARDENING & ZABBIX AGENT 2  v2.2.2 "
+echo "  cPANEL/WHM PROVISIONING, EA4 (LSAPI), CSF, HARDENING & ZABBIX AGENT 2  v2.2.3 "
 echo "=============================================================================="
 echo "Detected OS : $OS_ID $OS_VERSION_ID ($OS_FAMILY)"
 echo "Server IP   : $SERVER_IP"
@@ -777,16 +772,21 @@ SUDO
 
     local admin_home root_key=0 admin_key=0
     admin_home="$(getent passwd "$ADMIN_USER" | cut -d: -f6)"
-    has_pubkey_file "$admin_home/.ssh/authorized_keys" && admin_key=1 || true
-    has_pubkey_file /root/.ssh/authorized_keys && root_key=1 || true
-    if (( ! admin_key )); then ask_pubkey_for "$ADMIN_USER" ADMIN_PUBKEY && admin_key=1 || true; fi
-    if (( ! root_key )); then ask_pubkey_for root ROOT_PUBKEY && root_key=1 || true; fi
+    if has_pubkey_file "$admin_home/.ssh/authorized_keys"; then admin_key=1; fi
+    if has_pubkey_file /root/.ssh/authorized_keys; then root_key=1; fi
+    if (( ! admin_key )); then
+        if ask_pubkey_for "$ADMIN_USER" ADMIN_PUBKEY; then admin_key=1; fi
+    fi
+    if (( ! root_key )); then
+        if ask_pubkey_for root ROOT_PUBKEY; then root_key=1; fi
+    fi
 
     if (( ! admin_key && root_key )) && ask_yes_no "Copy root authorized_keys to $ADMIN_USER?" y; then
         install -d -m 700 -o "$ADMIN_USER" -g "$(id -gn "$ADMIN_USER")" "$admin_home/.ssh"
         cat /root/.ssh/authorized_keys >>"$admin_home/.ssh/authorized_keys"
         chown "$ADMIN_USER:$(id -gn "$ADMIN_USER")" "$admin_home/.ssh/authorized_keys"
-        chmod 600 "$admin_home/.ssh/authorized_keys"; admin_key=1
+        chmod 600 "$admin_home/.ssh/authorized_keys"
+        admin_key=1
     fi
 
     local permit_root="yes" pass_auth="yes"
@@ -847,24 +847,30 @@ restart_httpd() {
 }
 
 lsapi_available() {
-    if (( LSAPI_AVAILABLE >= 0 )); then (( LSAPI_AVAILABLE == 1 )); return; fi
-    if pkg_available "$(ea_name ea-apache24-mod_lsapi)"; then LSAPI_AVAILABLE=1; else LSAPI_AVAILABLE=0; fi
-    (( LSAPI_AVAILABLE == 1 ))
+    if (( LSAPI_AVAILABLE >= 0 )); then
+        if (( LSAPI_AVAILABLE == 1 )); then return 0; else return 1; fi
+    fi
+    if pkg_available "$(ea_name ea-apache24-mod_lsapi)"; then
+        LSAPI_AVAILABLE=1
+        return 0
+    else
+        LSAPI_AVAILABLE=0
+        return 1
+    fi
 }
 
 set_php_handlers() {
-    local handler="$1" d v n_ok=0 n_bad=0
+    local handler="$1" d v n_ok=0
     has_whmapi || return 1
     for d in /opt/cpanel/ea-php*; do
         [[ -d $d ]] || continue
         v="$(basename "$d")"
         if whmapi1 php_set_handler version="$v" handler="$handler" 2>>"$LOG_FILE" | grep -q 'result: 1'; then
-            log "MultiPHP: $v handler -> $handler"; n_ok=$((n_ok+1))
-        else
-            n_bad=$((n_bad+1))
+            log "MultiPHP: $v handler -> $handler"
+            n_ok=$((n_ok+1))
         fi
     done
-    (( n_ok > 0 ))
+    if (( n_ok > 0 )); then return 0; else return 1; fi
 }
 
 setup_cf_remoteip() {
@@ -1227,16 +1233,27 @@ harden_dns() {
 }
 
 DEFAULT_DISABLE_SERVICES="cups cups-browsed avahi-daemon avahi-daemon.socket bluetooth ModemManager postfix rpcbind rpcbind.socket nfs-server rpc-statd telnet.socket xinetd ypbind snmpd smb nmb abrtd"
+unwanted_list() { echo "${DISABLE_SERVICES:-$DEFAULT_DISABLE_SERVICES}"; }
+svc_skip() {
+    local s="$1"
+    if csv_has "${KEEP_SERVICES:-}" "$s"; then return 0; fi
+    if [[ $s == rpc* || $s == nfs* ]] && findmnt -rn -t nfs,nfs4 >/dev/null 2>&1; then return 0; fi
+    return 1
+}
+
 harden_services() {
     local s n=0
-    for s in ${DISABLE_SERVICES:-$DEFAULT_DISABLE_SERVICES}; do
-        if csv_has "${KEEP_SERVICES:-}" "$s"; then continue; fi
+    for s in $(unwanted_list); do
+        svc_skip "$s" && continue
         svc_exists "$s" || continue
         if systemctl is-active --quiet "$s" 2>/dev/null || systemctl is-enabled --quiet "$s" 2>/dev/null; then
-            systemctl disable --now "$s" >>"$LOG_FILE" 2>&1 && n=$((n+1)) || true
+            systemctl stop "$s" >>"$LOG_FILE" 2>&1 || true
+            systemctl disable "$s" >>"$LOG_FILE" 2>&1 || true
+            systemctl mask "$s" >>"$LOG_FILE" 2>&1 || true
+            n=$((n+1))
         fi
     done
-    log "Disabled unwanted services ($n stopped and disabled)."
+    log "Disabled unwanted services ($n stopped and masked)."
 }
 
 FORK_NPROC_SOFT="${FORK_NPROC_SOFT:-100}"
@@ -1335,11 +1352,6 @@ step_hardening() {
 # ==============================================================================
 # Verification
 # ==============================================================================
-resolve_a() {
-    if command -v dig &>/dev/null; then dig +short +time=3 +tries=1 A "$1" 2>/dev/null | grep -E '^[0-9.]+$' || true
-    else getent ahostsv4 "$1" 2>/dev/null | awk '{print $1}' | sort -u || true; fi
-}
-
 verify_nameservers() {
     v_section "Custom Nameservers" nameservers
     is_cpanel || { v_warn "cPanel not installed"; return 0; }
@@ -1354,20 +1366,20 @@ verify_csf() {
     v_section "Config Server Firewall" csf
     have_csf || { v_fail "CSF not installed"; return 0; }
     v_pass "CSF installed"
-    [[ "$(csf_get TESTING)" == "0" ]] && v_pass "TESTING mode off" || v_fail "CSF is in TESTING mode"
-    iptables -S 2>/dev/null | grep -q 'LOCALINPUT' && v_pass "CSF iptables rules loaded" || v_fail "CSF rules missing"
+    if [[ "$(csf_get TESTING)" == "0" ]]; then v_pass "TESTING mode off"; else v_fail "CSF is in TESTING mode"; fi
+    if iptables -S 2>/dev/null | grep -q 'LOCALINPUT'; then v_pass "CSF iptables rules loaded"; else v_fail "CSF rules missing"; fi
 }
 
 verify_lfd() {
     v_section "Login Failure Daemon (LFD)" lfd
     have_csf || { v_fail "CSF not installed"; return 0; }
-    systemctl is-active --quiet lfd 2>/dev/null && v_pass "lfd active and running" || v_fail "lfd inactive"
+    if systemctl is-active --quiet lfd 2>/dev/null; then v_pass "lfd active and running"; else v_fail "lfd inactive"; fi
 }
 
 verify_sshalerts() {
     v_section "SSH Login Alerts" sshalerts
     have_csf || { v_fail "CSF not installed"; return 0; }
-    [[ "$(csf_get LF_SSH_EMAIL_ALERT)" == "1" ]] && v_pass "SSH login alerts enabled" || v_fail "SSH login alerts disabled"
+    if [[ "$(csf_get LF_SSH_EMAIL_ALERT)" == "1" ]]; then v_pass "SSH login alerts enabled"; else v_fail "SSH login alerts disabled"; fi
 }
 
 verify_ssh() {
@@ -1405,8 +1417,8 @@ verify_easyapache() {
     v_section "EasyApache 4" easyapache
     is_cpanel || return 0
     local httpd; httpd="$(httpd_bin)"
-    "$httpd" -t >/dev/null 2>&1 && v_pass "Apache config valid" || v_fail "Apache config invalid"
-    "$httpd" -M 2>/dev/null | grep -q 'mpm_event_module' && v_pass "MPM: event" || v_fail "mod_mpm_event missing"
+    if "$httpd" -t >/dev/null 2>&1; then v_pass "Apache config valid"; else v_fail "Apache config invalid"; fi
+    if "$httpd" -M 2>/dev/null | grep -q 'mpm_event_module'; then v_pass "MPM: event"; else v_fail "mod_mpm_event missing"; fi
 }
 
 verify_php() {
@@ -1416,15 +1428,19 @@ verify_php() {
         [[ -d $d ]] || continue
         if grep -q '^disable_functions' "$d/zz-security-hardening.ini" 2>/dev/null; then ok=1; fi
     done
-    (( ok )) && v_pass "Dangerous PHP functions disabled across ea-php" || v_fail "disable_functions missing"
+    if (( ok )); then
+        v_pass "Dangerous PHP functions disabled across ea-php"
+    else
+        v_fail "disable_functions missing"
+    fi
 }
 
 verify_zabbix() {
     v_section "Proactive Monitoring" zabbix
-    pkg_installed zabbix-agent2 || { v_fail "zabbix-agent2 not installed"; return 0; }
-    systemctl is-active --quiet zabbix-agent2 && v_pass "Zabbix Agent 2 running" || v_fail "zabbix-agent2 not running"
+    if ! pkg_installed zabbix-agent2; then v_fail "zabbix-agent2 not installed"; return 0; fi
+    if systemctl is-active --quiet zabbix-agent2; then v_pass "Zabbix Agent 2 running"; else v_fail "zabbix-agent2 not running"; fi
     local out; out="$(zabbix_agent2 -c "$ZBX_CONF" -t agent.ping 2>&1 || true)"
-    grep -q '\[s|1\]' <<<"$out" && v_pass "agent.ping = 1" || v_fail "agent.ping failed"
+    if grep -q '\[s|1\]' <<<"$out"; then v_pass "agent.ping = 1"; else v_fail "agent.ping failed"; fi
 }
 
 verify_updates() {
@@ -1436,7 +1452,7 @@ verify_dns() {
     v_section "Secured DNS Server" dns
     local t; t="$(dns_type)"
     if [[ $t == bind ]]; then
-        bind_recursion_restricted && v_pass "BIND recursion restricted" || v_fail "BIND open recursion detected"
+        if bind_recursion_restricted; then v_pass "BIND recursion restricted"; else v_fail "BIND open recursion detected"; fi
     elif [[ $t == powerdns ]]; then
         v_pass "PowerDNS authoritative-only"
     else
@@ -1447,27 +1463,30 @@ verify_dns() {
 verify_services() {
     v_section "Unwanted Services" services
     local s bad=0
-    for s in ${DISABLE_SERVICES:-$DEFAULT_DISABLE_SERVICES}; do
-        if csv_has "${KEEP_SERVICES:-}" "$s"; then continue; fi
+    for s in $(unwanted_list); do
+        svc_skip "$s" && continue
         svc_exists "$s" || continue
-        if systemctl is-active --quiet "$s" 2>/dev/null || systemctl is-enabled --quiet "$s" 2>/dev/null; then
-            v_warn "$s is still active/enabled"; bad=1
+        if systemctl is-active --quiet "$s" 2>/dev/null; then
+            v_warn "$s is still active"
+            bad=1
         fi
     done
-    (( ! bad )) && v_pass "Unwanted services disabled"
+    if (( ! bad )); then
+        v_pass "Unwanted services disabled"
+    fi
 }
 
 verify_forkbomb() {
     v_section "Shell Fork Bomb Protection" forkbomb
-    [[ -f $FORK_CONF ]] && v_pass "Limits file present ($FORK_CONF)" || v_fail "$FORK_CONF missing"
+    if [[ -f $FORK_CONF ]]; then v_pass "Limits file present ($FORK_CONF)"; else v_fail "$FORK_CONF missing"; fi
 }
 
 verify_ftp() {
     v_section "FTP Hardening" ftp
     local main=/var/cpanel/conf/pureftpd/main
     if [[ -f $main ]]; then
-        grep -Eq "^NoAnonymous:[[:space:]]*'?yes'?" "$main" && v_pass "Anonymous FTP disabled" || v_fail "Anonymous FTP enabled"
-        grep -Eq "^RootPassLogins:[[:space:]]*'?no'?" "$main" && v_pass "Root FTP login disabled" || v_fail "Root FTP enabled"
+        if grep -Eq "^NoAnonymous:[[:space:]]*'?yes'?" "$main"; then v_pass "Anonymous FTP disabled"; else v_fail "Anonymous FTP enabled"; fi
+        if grep -Eq "^RootPassLogins:[[:space:]]*'?no'?" "$main"; then v_pass "Root FTP login disabled"; else v_fail "Root FTP enabled"; fi
     else
         v_pass "Pure-FTPd default secure"
     fi
